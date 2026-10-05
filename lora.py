@@ -17,9 +17,18 @@ from pathlib import Path
 import random
 import re
 import shutil
+import sys
 import time
 
 from artifacts import atomic_json, digest, load_corpus
+
+# The NVIDIA image of FLAME ships the Transformer Engine, and peft imports that
+# package whenever it is installed. The import loads the GPU driver library,
+# which a notebook without a GPU lacks, and the failure stops every import of
+# sentence-transformers. The trials use standard LoRA layers, so the engine is
+# hidden in every process. The other scripts import this module before the
+# libraries.
+sys.modules.setdefault("transformer_engine", None)
 
 FORMAT = "matsci-retrieval-lora-trial-v1"
 MIN_DEFINITION_WORDS = 8

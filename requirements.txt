@@ -1,6 +1,7 @@
-# Candidate pins verified on PyPI 2026-10-02 (peft and accelerate 2026-10-04);
-# validate in the FLAME image before the reservation. Keep the runtime's
-# CUDA-compatible torch build.
+# Pins verified on PyPI 2026-10-02 (peft and accelerate 2026-10-04) and installed
+# in the NVIDIA image of a FLAME notebook on 2026-10-05, where prepare.py and the
+# tests passed on CPU. GPU use is unverified as of that date. Keep the CUDA build
+# of torch that the image ships.
 sentence-transformers==6.1.0
 transformers==5.18.0
 numpy==2.5.3

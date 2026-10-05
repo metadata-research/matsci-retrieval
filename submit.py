@@ -58,7 +58,8 @@ def main():
     parser.add_argument("--runtime", choices=["torch-gh200", "torch-rtxa6000"], required=True)
     parser.add_argument("--gpus-per-node", type=int, default=1)
     parser.add_argument("--nodes", type=int, default=1)
-    parser.add_argument("--cpus-per-node", type=int, default=8)
+    parser.add_argument("--cpus-per-node", type=int, default=4,
+                        help="The A6000 node has 31 CPUs for eight GPUs, and the worker limits torch to four threads")
     parser.add_argument("--memory-per-node", default="32Gi")
     parser.add_argument("--namespace", default="metadata-research-center")
     parser.add_argument("--stop-at", required=True)

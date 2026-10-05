@@ -311,7 +311,7 @@ class PreemptionTests(unittest.TestCase):
         self.assertEqual(trainer.func_args, {"root": "/personal/bundle", "interpreter": "/personal/bundle/bin/python",
                                              "stop_at": arguments[8], "output": "results-test", "case_seconds": 5,
                                              "trial_shard": "2/4", "max_trials": 6})
-        self.assertEqual(trainer.resources_per_node, {"cpu": 8, "memory": "32Gi", "gpu": 1})
+        self.assertEqual(trainer.resources_per_node, {"cpu": 4, "memory": "32Gi", "gpu": 1})
         self.assertIn("Submitted TrainJob: job-name", printed.getvalue())
 
 

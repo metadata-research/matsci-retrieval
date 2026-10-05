@@ -193,6 +193,23 @@ class PairAndQueueTests(unittest.TestCase):
         self.assertEqual(lora.best_trial(self.root)["trial"]["id"], "balanced")
         self.assertEqual([entry["trial"] for entry in lora.summary([self.root])], ["balanced", "chemistry-specialist"])
 
+    def test_an_engine_that_cannot_load_does_not_stop_the_imports(self):
+        # A stand-in for the Transformer Engine of the NVIDIA image in a notebook without a GPU.
+        package = self.root / "site" / "transformer_engine"
+        package.mkdir(parents=True)
+        (package / "__init__.py").write_text('raise OSError("libcuda.so.1: cannot open shared object file")\n')
+        script = (
+            "import importlib.util, sys\n"
+            f"sys.path[:0] = [{str(CODE)!r}, {str(package.parent)!r}]\n"
+            "import lora\n"
+            "assert importlib.util.find_spec('transformer_engine') is None\n"
+            "try:\n"
+            "    import peft\n"  # peft imports the engine when it finds one.
+            "except ModuleNotFoundError as error:\n"
+            "    assert error.name == 'peft', error\n")
+        done = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True)
+        self.assertEqual(done.returncode, 0, done.stderr[-2000:])
+
 
 def minilm_ready():
     try:
