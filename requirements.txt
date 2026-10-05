@@ -1,0 +1,8 @@
+# Candidate pins verified on PyPI 2026-10-02 (peft and accelerate 2026-10-04);
+# validate in the FLAME image before the reservation. Keep the runtime's
+# CUDA-compatible torch build.
+sentence-transformers==6.1.0
+transformers==5.18.0
+numpy==2.5.3
+peft==0.21.2
+accelerate==1.15.0

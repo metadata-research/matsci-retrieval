@@ -1,0 +1,134 @@
+[
+  {
+    "id": "q01",
+    "query": "titanium dioxide",
+    "relevant_ids": null
+  },
+  {
+    "id": "q02",
+    "query": "how strongly a material resists elastic deformation",
+    "relevant_ids": null
+  },
+  {
+    "id": "q03",
+    "query": "a method that identifies crystal structure using diffraction",
+    "relevant_ids": null
+  },
+  {
+    "id": "q04",
+    "query": "measuring surface topography at nanometre scale",
+    "relevant_ids": null
+  },
+  {
+    "id": "q05",
+    "query": "describing the conditions needed to repeat an experiment",
+    "relevant_ids": null
+  },
+  {
+    "id": "q06",
+    "query": "a calculation of electronic band structure",
+    "relevant_ids": null
+  },
+  {
+    "id": "q07",
+    "query": "a material property describing heat transport",
+    "relevant_ids": null
+  },
+  {
+    "id": "q08",
+    "query": "an instrument used to measure an electrochemical response",
+    "relevant_ids": null
+  },
+  {
+    "id": "q09",
+    "query": "a chemical entity with a positive electric charge",
+    "relevant_ids": null
+  },
+  {
+    "id": "q10",
+    "query": "information identifying a research dataset",
+    "relevant_ids": null
+  },
+  {
+    "id": "q11",
+    "query": "a process that changes the shape of a metal",
+    "relevant_ids": null
+  },
+  {
+    "id": "q12",
+    "query": "a measurement and its uncertainty",
+    "relevant_ids": null
+  },
+  {
+    "id": "c01",
+    "query": "XrayPowderDiffraction",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c02",
+    "query": "ScanningTunnelingMicroscopy",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c03",
+    "query": "Band structure",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c04",
+    "query": "DifferentialThermalAnalysis",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c05",
+    "query": "MetrologicalUncertainty",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c06",
+    "query": "Dataset",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c07",
+    "query": "band gap",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c08",
+    "query": "AccessConditions",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c09",
+    "query": "tensile strength",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c10",
+    "query": "crystal structure",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c11",
+    "query": "electron",
+    "relevant_ids": null,
+    "group": "literal-control"
+  },
+  {
+    "id": "c12",
+    "query": "water",
+    "relevant_ids": null,
+    "group": "literal-control"
+  }
+]

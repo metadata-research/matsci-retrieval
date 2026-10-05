@@ -1,0 +1,29 @@
+[
+  {
+    "name": "minilm",
+    "id": "sentence-transformers/all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "dimensions": 384,
+    "max_length": 256,
+    "batch_size": 128,
+    "query_prefix": ""
+  },
+  {
+    "name": "bge-base",
+    "id": "BAAI/bge-base-en-v1.5",
+    "revision": "a5beb1e3e68b9ab74eb54cfd186867f64f240e1a",
+    "dimensions": 768,
+    "max_length": 512,
+    "batch_size": 64,
+    "query_prefix": "Represent this sentence for searching relevant passages: "
+  },
+  {
+    "name": "bge-large",
+    "id": "BAAI/bge-large-en-v1.5",
+    "revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+    "dimensions": 1024,
+    "max_length": 512,
+    "batch_size": 32,
+    "query_prefix": "Represent this sentence for searching relevant passages: "
+  }
+]
