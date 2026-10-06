@@ -1,10 +1,9 @@
 # MatSci retrieval experiments
 
-This repository holds a GPU experiment on semantic search over the ontology
-descriptions that MatSci-ONT publishes. It trains LoRA adapters for three
+This experiment trains LoRA adapters for three
 embedding models and runs as batch jobs on FLAME. Each job keeps its GPU loaded
 until a stated stop time, so the same jobs supply the load for the preemption
-test of 8 October 2026.
+test.
 
 ## The experiment
 
@@ -183,15 +182,6 @@ adapted index on CPU.
 | `sample.py` | Small corpus for a direct run of `workload.py` |
 | `queries.draft.json` | Draft queries for `search.py` |
 | `test_*.py` | Tests, run with `python3 -m unittest discover -p "test_*.py"` |
-
-## Limits
-
-The training pairs are weak supervision, and a claim about search quality needs
-independently judged queries. Nothing here writes a mapping back to an ontology
-or to curated SAM content.
-
-A preemption by Kueue, four jobs side by side on one node, a job with several
-GPUs and the GH200 nodes are untested.
 
 ## References
 
