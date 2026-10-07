@@ -6,7 +6,7 @@ import tarfile
 from artifacts import digest, load_corpus
 
 ROOT = "matsci-gpu-test"
-CODE = ["README.md", "artifacts.py", "lora.py", "models.json", "prepare.py", "queries.draft.json", "report.py",
+CODE = ["artifacts.py", "lora.py", "models.json", "prepare.py", "queries.draft.json", "report.py",
         "requirements.txt", "sample.py", "search.py", "submit.py", "test_artifacts.py", "test_lora.py",
         "test_preemption.py", "test_report.py", "trials.json", "workload.py"]
 

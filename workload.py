@@ -43,6 +43,8 @@ def main():
     parser.add_argument("--models", type=Path, default=Path(__file__).with_name("models.json"))
     parser.add_argument("--mode", choices=["build", "all"], default="all")
     parser.add_argument("--case-seconds", type=int, default=45)
+    parser.add_argument("--cpu-threads", type=int, default=1,
+                        help="CPU threads per GPU worker; submit.py derives this from the job's CPU allocation")
     parser.add_argument("--trials", type=Path, default=Path(__file__).with_name("trials.json"))
     parser.add_argument("--trial-shard", default="0/1",
                         help="i/n: this job runs the trials whose position modulo n equals i")
@@ -53,8 +55,8 @@ def main():
                         help="Functional tests without a GPU; never for a timed run")
     args = parser.parse_args()
     stop = deadline(args.stop_at)
-    if stop - time.time() < 90 or args.case_seconds <= 0:
-        parser.error("Allow at least 90 seconds until stop-at and a positive case duration")
+    if stop - time.time() < 90 or args.case_seconds <= 0 or args.cpu_threads < 1:
+        parser.error("Allow at least 90 seconds until stop-at and a positive case duration and CPU thread count")
     shard = re.fullmatch(r"(\d+)/(\d+)", args.trial_shard)
     if not shard or not int(shard[1]) < int(shard[2]) or (args.max_trials or 0) < 0 or args.reserve_seconds < 0:
         parser.error("The trial shard has the form i/n with i below n; limits must not be negative")
@@ -91,6 +93,8 @@ def main():
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+    os.environ["OMP_NUM_THREADS"] = str(args.cpu_threads)
+    os.environ["MKL_NUM_THREADS"] = str(args.cpu_threads)
     import numpy as np
     import torch
     from sentence_transformers import SentenceTransformer
@@ -101,7 +105,7 @@ def main():
     if cuda:
         torch.cuda.set_device(local)
     device = f"cuda:{local}" if cuda else "cpu"
-    torch.set_num_threads(max(1, min(4, (os.cpu_count() or 1) // int(os.environ.get("LOCAL_WORLD_SIZE", "1")))))
+    torch.set_num_threads(args.cpu_threads)
     torch.manual_seed(42)
     # A restart may resume; two writers with the same rank may not overlap.
     lock = (args.out / f"rank-{rank}.lock").open("a")
@@ -139,7 +143,7 @@ def main():
         **contract, "started": started, "stop_at": args.stop_at,
         "rank": rank, "world_size": world, "local_rank": local,
         "gpu_bytes": torch.cuda.get_device_properties(local).total_memory if cuda else 0,
-        "python": platform.python_version()
+        "python": platform.python_version(), "cpu_threads": args.cpu_threads
     })
     measured = {}
 

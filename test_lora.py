@@ -141,6 +141,14 @@ class PairAndQueueTests(unittest.TestCase):
         self.assertEqual(sorted(trial["id"] for shard in shards for trial in shard), sorted(trial["id"] for trial in queue))
         self.assertEqual(len(lora.load_trials(CODE / "trials.json", SPECS, "1/4", limit=6)), 6)
         self.assertEqual(lora.load_trials(CODE / "trials.json", SPECS, limit=0), [])
+        thursday = [lora.load_trials(CODE / "trials.json", SPECS, f"{index}/5", limit=30) for index in range(5)]
+        self.assertEqual([len(shard) for shard in thursday], [30] * 5)
+        self.assertEqual(sorted(trial["id"] for shard in thursday for trial in shard),
+                         sorted(trial["id"] for trial in queue[:150]))
+        for shard in thursday:
+            self.assertEqual({parent: sum(trial["parent"] == parent for trial in shard)
+                              for parent in ["minilm", "bge-base", "bge-large"]},
+                             {"minilm": 10, "bge-base": 10, "bge-large": 10})
 
     def test_bad_trial_files_and_shards_are_refused(self):
         for changes in ({"parent": "unpinned"}, {"id": "../escape"}, {"data": "some"}, {"rank": 0}):

@@ -9,7 +9,7 @@ import time
 from workload import deadline
 
 
-def launch(root, interpreter, stop_at, output, case_seconds=45, trial_shard="0/1", max_trials=-1):
+def launch(root, interpreter, stop_at, output, case_seconds=45, trial_shard="0/1", max_trials=-1, cpu_threads=1):
     # Kubeflow serializes this function alone, so imports stay inside it.
     # The SDK embeds this source in an unquoted shell here-document: keep it
     # free of dollar signs, backticks and backslashes.
@@ -28,10 +28,13 @@ def launch(root, interpreter, stop_at, output, case_seconds=45, trial_shard="0/1
         return
     command = [interpreter, str(root / "code/workload.py"),
                "--corpus", str(root / "corpus"), "--out", str(root / output),
-               "--stop-at", stop_at, "--case-seconds", str(case_seconds), "--trial-shard", trial_shard]
+               "--stop-at", stop_at, "--case-seconds", str(case_seconds), "--trial-shard", trial_shard,
+               "--cpu-threads", str(cpu_threads)]
     if max_trials >= 0:
         command += ["--max-trials", str(max_trials)]
-    process = subprocess.Popen(command, start_new_session=True)
+    environment = dict(os.environ, OMP_NUM_THREADS=str(cpu_threads),
+                       MKL_NUM_THREADS=str(cpu_threads), OPENBLAS_NUM_THREADS=str(cpu_threads))
+    process = subprocess.Popen(command, start_new_session=True, env=environment)
 
     def interrupted(signum, _frame):
         raise SystemExit(128 + signum)
@@ -58,8 +61,8 @@ def main():
     parser.add_argument("--runtime", choices=["torch-gh200", "torch-rtxa6000"], required=True)
     parser.add_argument("--gpus-per-node", type=int, default=1)
     parser.add_argument("--nodes", type=int, default=1)
-    parser.add_argument("--cpus-per-node", type=int, default=4,
-                        help="The A6000 node has 31 CPUs for eight GPUs, and the worker limits torch to four threads")
+    parser.add_argument("--cpus-per-node", type=int, default=1,
+                        help="CPUs shared by this job's GPU workers; FLAME also reserves CPUs for storage and inference")
     parser.add_argument("--memory-per-node", default="32Gi")
     parser.add_argument("--namespace", default="metadata-research-center")
     parser.add_argument("--stop-at", required=True)
@@ -108,7 +111,8 @@ def main():
         func=launch, func_args={"root": str(args.root), "interpreter": args.python,
                                 "stop_at": args.stop_at, "output": args.output,
                                 "case_seconds": args.case_seconds, "trial_shard": args.trial_shard,
-                                "max_trials": -1 if args.max_trials is None else args.max_trials},
+                                "max_trials": -1 if args.max_trials is None else args.max_trials,
+                                "cpu_threads": max(1, args.cpus_per_node // args.gpus_per_node)},
         num_nodes=args.nodes,
         resources_per_node={"cpu": args.cpus_per_node, "memory": args.memory_per_node, "gpu": args.gpus_per_node},
         **options

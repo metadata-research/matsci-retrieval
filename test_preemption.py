@@ -34,7 +34,9 @@ cuda = types.SimpleNamespace(
     reset_peak_memory_stats=lambda *_: None, synchronize=lambda *_: None,
     max_memory_allocated=lambda *_: 0, empty_cache=lambda: None, OutOfMemoryError=OutOfMemoryError)
 version = types.SimpleNamespace(cuda="fake")
-set_num_threads = manual_seed = lambda _value: None
+def set_num_threads(value):
+    assert value == int(os.environ["OMP_NUM_THREADS"]) == int(os.environ["MKL_NUM_THREADS"])
+manual_seed = lambda _value: None
 inference_mode = contextlib.nullcontext
 '''
 
@@ -167,6 +169,8 @@ class PreemptionTests(unittest.TestCase):
         second = self.worker("--mode", "build")
         self.assertEqual(second.wait(timeout=60), 0, second.stderr.read())
         self.assertEqual(len(self.committed()), 9)
+        environment = json.loads(next(self.out.glob("environment-rank-0-*.json")).read_text())
+        self.assertEqual(environment["cpu_threads"], 1)
         earlier, later = self.attempts()
         resume = next(event for event in later if event["stage"] == "resume")
         present = sum(model["present"] for model in resume["chunks"].values())
@@ -201,9 +205,9 @@ class PreemptionTests(unittest.TestCase):
         self.assertEqual(self.attempts()[-1][-1]["status"], "interrupted")
         self.assertEqual(self.committed(), [])
 
-    def launch(self, stop_at, **variables):
+    def launch(self, stop_at, cpu_threads=1, **variables):
         call = (f"import submit; submit.launch({str(self.root)!r}, {sys.executable!r}, {stop_at!r}, "
-                f"'results', case_seconds=1, trial_shard='0/1', max_trials=0)")
+                f"'results', case_seconds=1, trial_shard='0/1', max_trials=0, cpu_threads={cpu_threads})")
         return self.start([sys.executable, "-c", call], **variables)
 
     def test_wrapper_passes_the_stop_on_and_the_case_duration_through(self):
@@ -213,7 +217,7 @@ class PreemptionTests(unittest.TestCase):
             return {(event["model"], event["precision"], event["max_length"], event["distribution"],
                      event["batch_size"]) for event in self.attempts()[-1] if event["stage"] == "sweep"}
 
-        wrapper = self.launch(stop_time(600), FAKE_ROW_SECONDS="0.0003")
+        wrapper = self.launch(stop_time(600), cpu_threads=2, FAKE_ROW_SECONDS="0.0003")
         # A second case within seconds shows the one-second case duration reached the worker.
         wait_for(lambda: len(sweep_cases()) >= 2, seconds=40)
         os.kill(wrapper.pid, signal.SIGTERM)
@@ -223,6 +227,8 @@ class PreemptionTests(unittest.TestCase):
         self.assertEqual(stages[-1], "finished")
         self.assertNotIn("train", stages)  # The trial limit of zero reached the worker.
         self.assertEqual(len(self.committed()), 9)
+        environment = json.loads(next(self.out.glob("environment-rank-0-*.json")).read_text())
+        self.assertEqual(environment["cpu_threads"], 2)
 
     def test_failed_training_is_recorded_and_the_load_continues(self):
         # The stand-ins cannot train, so every trial fails. The job must go on to
@@ -260,7 +266,7 @@ class PreemptionTests(unittest.TestCase):
         self.assertNotIn("EOM", [line.strip() for line in source.splitlines()])
 
     def test_submit_refuses_values_the_here_document_would_expand(self):
-        arguments = ["submit.py", "--root", "/personal/$USER/bundle", "--python", "/personal/bundle/bin/python",
+        arguments = ["submit.py", "--root", "/home/ubuntu/$USER/bundle", "--python", "/home/ubuntu/bundle/bin/python",
                      "--runtime", "torch-rtxa6000", "--stop-at", stop_time(600)]
         with mock.patch.object(sys, "argv", arguments), contextlib.redirect_stderr(io.StringIO()) as printed, \
                 self.assertRaises(SystemExit):
@@ -269,7 +275,7 @@ class PreemptionTests(unittest.TestCase):
 
     def test_submit_refuses_a_trial_shard_outside_its_range(self):
         for shard in ["4/4", "$(id)/4", "1"]:
-            arguments = ["submit.py", "--root", "/personal/bundle", "--python", "/personal/bundle/bin/python",
+            arguments = ["submit.py", "--root", "/home/ubuntu/bundle", "--python", "/home/ubuntu/bundle/bin/python",
                          "--runtime", "torch-rtxa6000", "--stop-at", stop_time(600), "--trial-shard", shard]
             with mock.patch.object(sys, "argv", arguments), contextlib.redirect_stderr(io.StringIO()) as printed, \
                     self.assertRaises(SystemExit):
@@ -290,9 +296,9 @@ class PreemptionTests(unittest.TestCase):
                 calls.append(options)
                 return "job-name"
 
-        arguments = ["submit.py", "--root", "/personal/bundle", "--python", "/personal/bundle/bin/python",
+        arguments = ["submit.py", "--root", "/home/ubuntu/bundle", "--python", "/home/ubuntu/bundle/bin/python",
                      "--runtime", "torch-rtxa6000", "--stop-at", stop_time(600), "--case-seconds", "5",
-                     "--output", "results-test", "--trial-shard", "2/4", "--max-trials", "6", "--execute"]
+                     "--output", "results-test", "--trial-shard", "4/5", "--max-trials", "30", "--execute"]
         # A shell opened through SSH inside a pod has the service account but not
         # the two variables that locate the cluster API.
         address = {"KUBERNETES_SERVICE_HOST": None, "KUBERNETES_SERVICE_PORT": None}
@@ -308,10 +314,10 @@ class PreemptionTests(unittest.TestCase):
         self.assertEqual(options["runtime"], "torch-rtxa6000")
         trainer = options["trainer"]
         self.assertIs(trainer.func, submit.launch)
-        self.assertEqual(trainer.func_args, {"root": "/personal/bundle", "interpreter": "/personal/bundle/bin/python",
+        self.assertEqual(trainer.func_args, {"root": "/home/ubuntu/bundle", "interpreter": "/home/ubuntu/bundle/bin/python",
                                              "stop_at": arguments[8], "output": "results-test", "case_seconds": 5,
-                                             "trial_shard": "2/4", "max_trials": 6})
-        self.assertEqual(trainer.resources_per_node, {"cpu": 4, "memory": "32Gi", "gpu": 1})
+                                             "trial_shard": "4/5", "max_trials": 30, "cpu_threads": 1})
+        self.assertEqual(trainer.resources_per_node, {"cpu": 1, "memory": "32Gi", "gpu": 1})
         self.assertIn("Submitted TrainJob: job-name", printed.getvalue())
 
 
