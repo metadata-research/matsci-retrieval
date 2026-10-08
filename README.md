@@ -67,29 +67,24 @@ In a shell opened with `ssh flame`:
 
 ```bash
 cd /home/ubuntu/matsci-gpu-test
-export KUBERNETES_SERVICE_HOST=kubernetes.default.svc KUBERNETES_SERVICE_PORT=443
-PY="$PWD/.venv-x86_64/bin/python"
-NS=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-set -o pipefail
-for i in 0 1 2 3 4; do
-  "$PY" code/submit.py --root /home/ubuntu/matsci-gpu-test \
-    --python /home/ubuntu/matsci-gpu-test/.venv-x86_64/bin/python \
-    --runtime torch-rtxa6000 --gpus-per-node 1 --nodes 1 \
-    --cpus-per-node 1 --memory-per-node 32Gi --namespace "$NS" \
-    --output "results-1008-$i" --trial-shard "$i/5" --max-trials 30 \
-    --stop-at 2026-10-08T18:00:00+02:00 \
-    --execute | tee -a submitted.txt || break
-done
+bash code/run-1008.sh preview
+bash code/run-1008.sh monitor
+# At the start of the run:
+bash code/run-1008.sh start
+bash code/run-1008.sh status
 ```
 
-`submit.py` prints a submission and sends nothing unless `--execute` is given.
-`submitted.txt` links each TrainJob name to its output directory.
+`preview` prints the five job plans; `monitor` records cluster activity.
+`start` submits the jobs from 15:00 Berlin time, with one CPU and one GPU each,
+assignments `i/5`, at most 30 trials, and an 18:00 deadline. `status` shows
+their progress. Logs are saved in `logs/1008/`.
 
 ## Evaluation after a run
 
 ```bash
 OUT=results-1008-0    # the output directory of the selected trial
 TRIAL=                # the name of the selected trial
+PY="$PWD/.venv-x86_64/bin/python"
 "$PY" code/lora.py test --corpus corpus --out "$OUT" --trial "$TRIAL"
 ADAPTED=$(ls "$OUT/adapted" | head -n 1)
 "$PY" code/search.py --corpus corpus --index "$OUT/adapted/$ADAPTED" \
@@ -110,6 +105,7 @@ adapted index on CPU.
 | `lora.py` | Training pairs, trials, checkpoints, summary and test split |
 | `artifacts.py` | Corpus loading, vector chunks and checksums |
 | `submit.py` | Preview of a TrainJob, submitted with `--execute` |
+| `run-1008.sh` | Preview, monitoring, launch and status for the five-job run |
 | `report.py` | Summary of the records and the GPU telemetry of a job |
 | `search.py` | Exact cosine search over a complete index on CPU |
 | `prepare.py` | Model download and a training check on CPU |
